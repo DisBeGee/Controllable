@@ -4,30 +4,32 @@ import com.mrcrayfish.controllable.Controllable;
 import com.mrcrayfish.controllable.client.gui.GuiControllerLayout;
 import com.mrcrayfish.controllable.event.ControllerEvent;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiIngameMenu;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.gui.inventory.GuiContainer;
-import net.minecraft.client.gui.inventory.GuiContainerCreative;
-import net.minecraft.client.gui.inventory.GuiInventory;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screen.inventory.ContainerScreen;
+//import net.minecraft.client.gui.GuiScreen;
+//import net.minecraft.client.gui.inventory.GuiContainer;
+//import net.minecraft.client.gui.inventory.GuiContainerCreative;
+//import net.minecraft.client.gui.inventory.GuiInventory;
 import net.minecraft.client.settings.KeyBinding;
-import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.Slot;
-import net.minecraft.network.play.client.CPacketPlayerDigging;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.FrameTimer;
+import net.minecraft.inventory.container.Slot;
+//import net.minecraft.creativetab.CreativeTabs;
+//import net.minecraft.entity.player.EntityPlayer;
+//import net.minecraft.inventory.Slot;
+//import net.minecraft.network.play.client.CPacketPlayerDigging;
+//import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.InputUpdateEvent;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent;
-import net.minecraftforge.fml.relauncher.ReflectionHelper;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
+//import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+//import net.minecraftforge.fml.common.gameevent.TickEvent;
+//import net.minecraftforge.fml.relauncher.ReflectionHelper;
+///import net.minecraftforge.fml.relauncher.Side;
+//import net.minecraftforge.fml.relauncher.SideOnly;
+//import org.lwjgl.input.Keyboard;
+//import org.lwjgl.input.Mouse;
+import net.minecraftforge.event.TickEvent;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -36,7 +38,7 @@ import java.lang.reflect.Method;
 /**
  * Author: MrCrayfish
  */
-@SideOnly(Side.CLIENT)
+//@SideOnly(Side.CLIENT)
 public class ControllerInput
 {
     public static int lastUse = 0;
@@ -55,8 +57,9 @@ public class ControllerInput
     private float mouseSpeedY;
 
     private int dropCounter = -1;
+    
 
-    @SubscribeEvent
+    //@SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event)
     {
         if(event.phase == TickEvent.Phase.START)
@@ -73,9 +76,9 @@ public class ControllerInput
             if(controller == null)
                 return;
 
-            Minecraft mc = Minecraft.getMinecraft();
-            if(mc.inGameHasFocus)
-                return;
+            Minecraft mc = Minecraft.getInstance();
+            //if(mc.inGameHasFocus)
+            //    return;
 
             if(mc.currentScreen == null || mc.currentScreen instanceof GuiControllerLayout)
                 return;
@@ -91,8 +94,8 @@ public class ControllerInput
                  * switching back to controller, the cursor would jump to old target mouse position. */
                 if(prevXAxis == 0.0F && prevYAxis == 0.0F)
                 {
-                    prevTargetMouseX = targetMouseX = Mouse.getX();
-                    prevTargetMouseY = targetMouseY = Mouse.getY();
+                    prevTargetMouseX = targetMouseX = (int) mc.mouseHelper.getMouseX();
+                    prevTargetMouseY = targetMouseY = (int) mc.mouseHelper.getMouseY();
                 }
 
                 float xAxis = (controller.getLThumbStickXValue() > 0.0F ? 1 : -1) * Math.abs(controller.getLThumbStickXValue());
@@ -169,17 +172,15 @@ public class ControllerInput
 
         if(mc.currentScreen == null)
         {
-            /* Handles rotating the camera of player */
+            /* Handles rotating the yaw of player */
             if(controller.getRThumbStickXValue() != 0.0F || controller.getRThumbStickYValue() != 0.0F)
             {
                 lastUse = 100;
-                ControllerEvent.Turn turnEvent = new ControllerEvent.Turn(controller, 40.0F * ((Minecraft.getMinecraft().gameSettings.mouseSensitivity * 0.875f) + 0.125f), 30.0F * ((Minecraft.getMinecraft().gameSettings.mouseSensitivity * 0.875f) + 0.125f));
+                ControllerEvent.Turn turnEvent = new ControllerEvent.Turn(controller, 20.0F, 15.0F);
                 if(!MinecraftForge.EVENT_BUS.post(turnEvent))
                 {
-                	FrameTimer frameTimer = mc.getFrameTimer();
-                	float framerateMultiplier = frameTimer.getFrames()[frameTimer.getIndex() >= 1 ? frameTimer.getIndex() - 1 : frameTimer.getIndex() + 239] / (1000000000f / 60f);
-                    float rotationYaw = turnEvent.getYawSpeed() * (controller.getRThumbStickXValue() > 0.0F ? 1 : -1) * Math.abs(controller.getRThumbStickXValue()) * framerateMultiplier;
-                    float rotationPitch = turnEvent.getPitchSpeed() * (controller.getRThumbStickYValue() > 0.0F ? 1 : -1) * Math.abs(controller.getRThumbStickYValue()) * framerateMultiplier;
+                    float rotationYaw = turnEvent.getYawSpeed() * (controller.getRThumbStickXValue() > 0.0F ? 1 : -1) * Math.abs(controller.getRThumbStickXValue());
+                    float rotationPitch = turnEvent.getPitchSpeed() * (controller.getRThumbStickYValue() > 0.0F ? 1 : -1) * Math.abs(controller.getRThumbStickYValue());
                     player.turn(rotationYaw, rotationPitch);
                 }
             }
@@ -287,17 +288,7 @@ public class ControllerInput
 
             if(controller.isButtonPressed(Buttons.A))
             {
-            	if (!controller.wasButtonPressed(Buttons.A))
-            	{
-            		KeyBinding.setKeyBindState(Minecraft.getMinecraft().gameSettings.keyBindJump.getKeyCode(), true);
-            	}
-            }
-            else
-            {
-            	if (controller.wasButtonPressed(Buttons.A))
-            	{
-            		KeyBinding.setKeyBindState(Minecraft.getMinecraft().gameSettings.keyBindJump.getKeyCode(), false);
-            	}
+                event.getMovementInput().jump = true;
             }
         }
 
@@ -305,8 +296,6 @@ public class ControllerInput
         {
             mc.rightClickMouse();
         }
-        
-        controller.pushOldStates();
     }
 
     public void handleButtonInput(Controller controller, int button, boolean state)
@@ -342,21 +331,6 @@ public class ControllerInput
                 else if(mc.player != null)
                 {
                     mc.player.closeScreen();
-                }
-            }
-            else if(button == Buttons.START)
-            {
-            	if(mc.currentScreen == null)
-                {
-                    mc.displayInGameMenu();
-                }
-                else if(mc.player != null)
-                {
-                    mc.player.closeScreen();
-                }
-                else if(mc.currentScreen instanceof GuiIngameMenu)
-                {
-                	mc.displayGuiScreen(null);
                 }
             }
             else if(button == Buttons.LEFT_THUMB_STICK)
@@ -492,23 +466,23 @@ public class ControllerInput
         }
     }
 
-    private void moveMouseToClosestSlot(boolean moving, GuiScreen screen)
+    private void moveMouseToClosestSlot(boolean moving, Screen screen)
     {
         /* Makes the mouse attracted to slots. This helps with selecting items when using
          * a controller. */
-        if(screen instanceof GuiContainer)
+        if(screen instanceof ContainerScreen)
         {
-            Minecraft mc = Minecraft.getMinecraft();
-            GuiContainer guiContainer = (GuiContainer) screen;
+            Minecraft mc = Minecraft.getInstance();
+            ContainerScreen guiContainer = (ContainerScreen) screen;
             int guiLeft = (guiContainer.width - guiContainer.getXSize()) / 2;
             int guiTop = (guiContainer.height - guiContainer.getYSize()) / 2;
-            int mouseX = targetMouseX * guiContainer.width / mc.displayWidth;
-            int mouseY = guiContainer.height - targetMouseY * guiContainer.height / mc.displayHeight - 1;
+            int mouseX = targetMouseX * guiContainer.width / mc.mainWindow.getWidth();
+            int mouseY = guiContainer.height - targetMouseY * guiContainer.height / mc.mainWindow.getHeight() - 1;
 
             /* Finds the closest slot in the GUI within 14 pixels (inclusive) */
             Slot closestSlot = null;
             double closestDistance = -1.0;
-            for(Slot slot : guiContainer.inventorySlots.inventorySlots)
+            for(Slot slot : guiContainer.getContainer().inventorySlots)
             {
                 int posX = guiLeft + slot.xPos + 8;
                 int posY = guiTop + slot.yPos + 8;
@@ -525,12 +499,12 @@ public class ControllerInput
             {
                 int slotCenterX = guiLeft + closestSlot.xPos + 8;
                 int slotCenterY = guiTop + closestSlot.yPos + 8;
-                int realMouseX = (int) (slotCenterX / ((float) guiContainer.width / (float) mc.displayWidth));
-                int realMouseY = (int) (-(slotCenterY + 1 - guiContainer.height) / ((float) guiContainer.width / (float) mc.displayWidth));
+                int realMouseX = (int) (slotCenterX / ((float) guiContainer.width / (float) mc.mainWindow.getWidth()));
+                int realMouseY = (int) (-(slotCenterY + 1 - guiContainer.height) / ((float) guiContainer.width / (float) mc.mainWindow.getWidth()));
                 int deltaX = targetMouseX - realMouseX;
                 int deltaY = targetMouseY - realMouseY;
-                int targetMouseXScaled = targetMouseX * guiContainer.width / mc.displayWidth;
-                int targetMouseYScaled = guiContainer.height - targetMouseY * guiContainer.height / mc.displayHeight - 1;
+                int targetMouseXScaled = targetMouseX * guiContainer.width / mc.mainWindow.getWidth();
+                int targetMouseYScaled = guiContainer.height - targetMouseY * guiContainer.height / mc.mainWindow.getHeight() - 1;
 
                 if(!moving)
                 {
@@ -674,7 +648,6 @@ public class ControllerInput
         {
             if(controller.isButtonPressed(Buttons.RIGHT_TRIGGER))
             {
-            	lastUse = 100;
                 isLeftClicking = true;
             }
         }
@@ -693,7 +666,6 @@ public class ControllerInput
         {
             if(controller.isButtonPressed(Buttons.LEFT_TRIGGER))
             {
-            	lastUse = 100;
                 isRightClicking = true;
             }
         }
