@@ -4,6 +4,8 @@
 
 I noticed a lack of support for controller for the Java Edition of Minecraft, this is where Controllable comes in. Controllable adds that ability into the game. This mod has been heavily influenced by the controls in the Bedrock Edition of the game, however it is much more configurable (coming soon) and supports more controllers (coming soon)! There is also an API available for mod developers to add controller support to your own mod.
 
+DisBeGee edit: I really like Minecraft on the big screen with controllers, but since everyone has now moved onto Minecraft 1.13+, I can't use the controller with any of the new servers or features. This will be my feeble attempt to try to port the mod over. The changes between 1.12 and 1.13+ are MASSIVE, I've never seen such a rearchitecture of this scale before, on both Mojang AND on Forge's end! Please if you want to fork or contribute, let me know, because this is going to be a T R I P.
+
 ### Features:
 * On-screen button indicators (just like Bedrock Edition)
 * Easy inventory management
