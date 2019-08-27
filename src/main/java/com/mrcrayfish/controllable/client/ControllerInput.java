@@ -172,15 +172,17 @@ public class ControllerInput
 
         if(mc.currentScreen == null)
         {
-            /* Handles rotating the yaw of player */
+            /* Handles rotating the camera of player */
             if(controller.getRThumbStickXValue() != 0.0F || controller.getRThumbStickYValue() != 0.0F)
             {
                 lastUse = 100;
-                ControllerEvent.Turn turnEvent = new ControllerEvent.Turn(controller, 20.0F, 15.0F);
+                ControllerEvent.Turn turnEvent = new ControllerEvent.Turn(controller, 40.0F * ((Minecraft.getMinecraft().gameSettings.mouseSensitivity * 0.875f) + 0.125f), 30.0F * ((Minecraft.getMinecraft().gameSettings.mouseSensitivity * 0.875f) + 0.125f));
                 if(!MinecraftForge.EVENT_BUS.post(turnEvent))
                 {
-                    float rotationYaw = turnEvent.getYawSpeed() * (controller.getRThumbStickXValue() > 0.0F ? 1 : -1) * Math.abs(controller.getRThumbStickXValue());
-                    float rotationPitch = turnEvent.getPitchSpeed() * (controller.getRThumbStickYValue() > 0.0F ? 1 : -1) * Math.abs(controller.getRThumbStickYValue());
+                	FrameTimer frameTimer = mc.getFrameTimer();
+                	float framerateMultiplier = frameTimer.getFrames()[frameTimer.getIndex() >= 1 ? frameTimer.getIndex() - 1 : frameTimer.getIndex() + 239] / (1000000000f / 60f);
+                    float rotationYaw = turnEvent.getYawSpeed() * (controller.getRThumbStickXValue() > 0.0F ? 1 : -1) * Math.abs(controller.getRThumbStickXValue()) * framerateMultiplier;
+                    float rotationPitch = turnEvent.getPitchSpeed() * (controller.getRThumbStickYValue() > 0.0F ? 1 : -1) * Math.abs(controller.getRThumbStickYValue()) * framerateMultiplier;
                     player.turn(rotationYaw, rotationPitch);
                 }
             }
@@ -288,7 +290,17 @@ public class ControllerInput
 
             if(controller.isButtonPressed(Buttons.A))
             {
-                event.getMovementInput().jump = true;
+                if (!controller.wasButtonPressed(Buttons.A))
+            	{
+            		KeyBinding.setKeyBindState(Minecraft.getMinecraft().gameSettings.keyBindJump.getKeyCode(), true);
+            	}
+            }
+            else
+            {
+            	if (controller.wasButtonPressed(Buttons.A))
+            	{
+            		KeyBinding.setKeyBindState(Minecraft.getMinecraft().gameSettings.keyBindJump.getKeyCode(), false);
+            	}
             }
         }
 
@@ -296,6 +308,8 @@ public class ControllerInput
         {
             mc.rightClickMouse();
         }
+		
+		controller.pushOldStates();
     }
 
     public void handleButtonInput(Controller controller, int button, boolean state)
@@ -331,6 +345,21 @@ public class ControllerInput
                 else if(mc.player != null)
                 {
                     mc.player.closeScreen();
+                }
+            }
+			else if(button == Buttons.START)
+            {
+            	if(mc.currentScreen == null)
+                {
+                    mc.displayInGameMenu();
+                }
+                else if(mc.player != null)
+                {
+                    mc.player.closeScreen();
+                }
+                else if(mc.currentScreen instanceof GuiIngameMenu)
+                {
+                	mc.displayGuiScreen(null);
                 }
             }
             else if(button == Buttons.LEFT_THUMB_STICK)
@@ -646,6 +675,7 @@ public class ControllerInput
         Controller controller = Controllable.getController();
         if(controller != null)
         {
+			lastUse = 100;
             if(controller.isButtonPressed(Buttons.RIGHT_TRIGGER))
             {
                 isLeftClicking = true;
@@ -666,6 +696,7 @@ public class ControllerInput
         {
             if(controller.isButtonPressed(Buttons.LEFT_TRIGGER))
             {
+				lastUse = 100;
                 isRightClicking = true;
             }
         }
