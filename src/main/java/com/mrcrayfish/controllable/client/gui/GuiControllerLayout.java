@@ -2,9 +2,10 @@ package com.mrcrayfish.controllable.client.gui;
 
 import com.mrcrayfish.controllable.Reference;
 import com.mrcrayfish.controllable.client.Buttons;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.gui.screen.Screen;
+//import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.ITextComponent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,14 +13,19 @@ import java.util.List;
 /**
  * Author: MrCrayfish
  */
-public class GuiControllerLayout extends GuiScreen
+public class GuiControllerLayout extends Screen
 {
-    public static final ResourceLocation TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/gui/controller.png");
+    protected GuiControllerLayout(ITextComponent titleIn) {
+		super(titleIn);
+		// TODO Auto-generated constructor stub
+	}
+
+	public static final ResourceLocation TEXTURE = new ResourceLocation(Reference.MOD_ID, "textures/gui/controller.png");
 
     private List<ControllerButton> controllerButtons = new ArrayList<>();
 
     @Override
-    public void initGui()
+    public void init()
     {
         controllerButtons.add(new ControllerButton(Buttons.A, 29, 9, 7, 0, 3, 3, 5));
         controllerButtons.add(new ControllerButton(Buttons.B, 32, 6, 13, 0, 3, 3, 5));
@@ -41,7 +47,7 @@ public class GuiControllerLayout extends GuiScreen
     }
 
     @Override
-    public void drawScreen(int mouseX, int mouseY, float partialTicks)
+    public void render(int mouseX, int mouseY, float partialTicks)
     {
         this.drawDefaultBackground();
 

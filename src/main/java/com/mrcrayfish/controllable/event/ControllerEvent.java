@@ -1,8 +1,10 @@
 package com.mrcrayfish.controllable.event;
 
 import com.mrcrayfish.controllable.client.Controller;
-import net.minecraftforge.fml.common.eventhandler.Cancelable;
-import net.minecraftforge.fml.common.eventhandler.Event;
+
+import net.minecraftforge.eventbus.api.Cancelable;
+//import net.minecraftforge.fml.common.eventhandler.Cancelable;
+import net.minecraftforge.eventbus.api.Event;
 
 /**
  * Author: MrCrayfish

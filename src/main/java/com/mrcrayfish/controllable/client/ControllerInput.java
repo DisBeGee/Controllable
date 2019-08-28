@@ -4,8 +4,10 @@ import com.mrcrayfish.controllable.Controllable;
 import com.mrcrayfish.controllable.client.gui.GuiControllerLayout;
 import com.mrcrayfish.controllable.event.ControllerEvent;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.inventory.ContainerScreen;
+import net.minecraft.client.gui.screen.inventory.InventoryScreen;
 //import net.minecraft.client.gui.GuiScreen;
 //import net.minecraft.client.gui.inventory.GuiContainer;
 //import net.minecraft.client.gui.inventory.GuiContainerCreative;
@@ -30,6 +32,7 @@ import net.minecraftforge.common.MinecraftForge;
 //import org.lwjgl.input.Keyboard;
 //import org.lwjgl.input.Mouse;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -143,11 +146,11 @@ public class ControllerInput
         /* Makes the cursor movement appear smooth between ticks. This will only run if the target
          * mouse position is different to the previous tick's position. This allows for the mouse
          * to still be used as input. */
-        if(Minecraft.getMinecraft().currentScreen != null && (targetMouseX != prevTargetMouseX || targetMouseY != prevTargetMouseY))
+        if(Minecraft.getInstance().currentScreen != null && (targetMouseX != prevTargetMouseX || targetMouseY != prevTargetMouseY))
         {
-            if(!(Minecraft.getMinecraft().currentScreen instanceof GuiControllerLayout))
+            if(!(Minecraft.getInstance().currentScreen instanceof GuiControllerLayout))
             {
-                float partialTicks = Minecraft.getMinecraft().getRenderPartialTicks();
+                float partialTicks = Minecraft.getInstance().getRenderPartialTicks();
                 int mouseX = (int) (prevTargetMouseX + (targetMouseX - prevTargetMouseX) * partialTicks + 0.5F);
                 int mouseY = (int) (prevTargetMouseY + (targetMouseY - prevTargetMouseY) * partialTicks + 0.5F);
                 Mouse.setCursorPosition(mouseX, mouseY);
@@ -165,8 +168,8 @@ public class ControllerInput
         if(event.phase == TickEvent.Phase.END)
             return;
 
-        Minecraft mc = Minecraft.getMinecraft();
-        EntityPlayer player = mc.player;
+        Minecraft mc = Minecraft.getInstance();
+        ClientPlayerEntity player = mc.player;
         if(player == null)
             return;
 
@@ -176,7 +179,7 @@ public class ControllerInput
             if(controller.getRThumbStickXValue() != 0.0F || controller.getRThumbStickYValue() != 0.0F)
             {
                 lastUse = 100;
-                ControllerEvent.Turn turnEvent = new ControllerEvent.Turn(controller, 40.0F * ((Minecraft.getMinecraft().gameSettings.mouseSensitivity * 0.875f) + 0.125f), 30.0F * ((Minecraft.getMinecraft().gameSettings.mouseSensitivity * 0.875f) + 0.125f));
+                ControllerEvent.Turn turnEvent = new ControllerEvent.Turn(controller, 40.0F * ((Minecraft.getInstance().gameSettings.mouseSensitivity * 0.875f) + 0.125f), 30.0F * ((Minecraft.getInstance().gameSettings.mouseSensitivity * 0.875f) + 0.125f));
                 if(!MinecraftForge.EVENT_BUS.post(turnEvent))
                 {
                 	FrameTimer frameTimer = mc.getFrameTimer();
@@ -218,7 +221,7 @@ public class ControllerInput
     @SubscribeEvent
     public void onInputUpdate(InputUpdateEvent event)
     {
-        EntityPlayer player = Minecraft.getMinecraft().player;
+        ClientPlayerEntity player = Minecraft.getInstance().player;
         if(player == null)
             return;
 
@@ -226,7 +229,7 @@ public class ControllerInput
         if(controller == null)
             return;
 
-        Minecraft mc = Minecraft.getMinecraft();
+        Minecraft mc = Minecraft.getInstance();
 
         if(keyboardSneaking && !mc.gameSettings.keyBindSneak.isKeyDown())
         {
@@ -240,7 +243,7 @@ public class ControllerInput
             keyboardSneaking = true;
         }
 
-        if(mc.player.capabilities.isFlying || mc.player.isRiding())
+        if(mc.player.abilities.isFlying || mc.player.isRidingHorse())
         {
             lastUse = 100;
             sneaking = mc.gameSettings.keyBindSneak.isKeyDown();
@@ -292,14 +295,14 @@ public class ControllerInput
             {
                 if (!controller.wasButtonPressed(Buttons.A))
             	{
-            		KeyBinding.setKeyBindState(Minecraft.getMinecraft().gameSettings.keyBindJump.getKeyCode(), true);
+            		KeyBinding.setKeyBindState(Minecraft.getInstance().gameSettings.keyBindJump.getKey(), true);
             	}
             }
             else
             {
             	if (controller.wasButtonPressed(Buttons.A))
             	{
-            		KeyBinding.setKeyBindState(Minecraft.getMinecraft().gameSettings.keyBindJump.getKeyCode(), false);
+            		KeyBinding.setKeyBindState(Minecraft.getInstance().gameSettings.keyBindJump.getKey(), false);
             	}
             }
         }
@@ -323,7 +326,7 @@ public class ControllerInput
         button = event.getModifiedButton();
         controller.setButtonState(button, state);
 
-        Minecraft mc = Minecraft.getMinecraft();
+        Minecraft mc = Minecraft.getInstance();
         if(state)
         {
             if(button == Buttons.Y)
@@ -337,10 +340,10 @@ public class ControllerInput
                     else
                     {
                         mc.getTutorial().openInventory();
-                        mc.displayGuiScreen(new GuiInventory(mc.player));
+                        mc.displayGuiScreen(new InventoryScreen(mc.player));
                     }
-                    prevTargetMouseX = targetMouseX = Mouse.getX();
-                    prevTargetMouseY = targetMouseY = Mouse.getY();
+                    prevTargetMouseX = targetMouseX = (int) mc.mouseHelper.getMouseX();
+                    prevTargetMouseY = targetMouseY = (int) mc.mouseHelper.getMouseY();
                 }
                 else if(mc.player != null)
                 {
@@ -364,7 +367,7 @@ public class ControllerInput
             }
             else if(button == Buttons.LEFT_THUMB_STICK)
             {
-                if(mc.currentScreen == null && mc.player != null && !mc.player.capabilities.isFlying && !mc.player.isRiding())
+                if(mc.currentScreen == null && mc.player != null && !mc.player.abilities.isFlying && !mc.player.isRidingHorse())
                 {
                     sneaking = !sneaking;
                 }
@@ -605,7 +608,7 @@ public class ControllerInput
      */
     private void invokeMouseClick(GuiScreen gui, int button)
     {
-        Minecraft mc = Minecraft.getMinecraft();
+        Minecraft mc = Minecraft.getInstance();
         if(gui != null)
         {
             int guiX = Mouse.getX() * gui.width / mc.displayWidth;
@@ -641,11 +644,11 @@ public class ControllerInput
      */
     private void invokeMouseReleased(GuiScreen gui, int button)
     {
-        Minecraft mc = Minecraft.getMinecraft();
+        Minecraft mc = Minecraft.getInstance();
         if(gui != null)
         {
-            int mouseX = Mouse.getX() * gui.width / mc.displayWidth;
-            int mouseY = gui.height - Mouse.getY() * gui.height / mc.displayHeight - 1;
+            int mouseX = mc.mouseHelper.getMouseX() * gui.width / mc.displayWidth;
+            int mouseY = gui.height - mc.mouseHelper.getMouseY() * gui.height / mc.displayHeight - 1;
 
             try
             {
@@ -670,7 +673,7 @@ public class ControllerInput
      */
     public static boolean isLeftClicking()
     {
-        Minecraft mc = Minecraft.getMinecraft();
+        Minecraft mc = Minecraft.getInstance();
         boolean isLeftClicking = mc.gameSettings.keyBindAttack.isKeyDown();
         Controller controller = Controllable.getController();
         if(controller != null)
@@ -689,7 +692,7 @@ public class ControllerInput
      */
     public static boolean isRightClicking()
     {
-        Minecraft mc = Minecraft.getMinecraft();
+        Minecraft mc = Minecraft.getInstance();
         boolean isRightClicking = mc.gameSettings.keyBindUseItem.isKeyDown();
         Controller controller = Controllable.getController();
         if(controller != null)
