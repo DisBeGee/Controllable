@@ -5,8 +5,11 @@ import com.mrcrayfish.controllable.client.gui.GuiControllerLayout;
 import com.mrcrayfish.controllable.event.ControllerEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
+import net.minecraft.client.gui.screen.IngameMenuScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.inventory.ContainerScreen;
+import net.minecraft.client.gui.screen.inventory.CreativeScreen;
+import net.minecraft.client.gui.screen.inventory.CreativeScreen.CreativeContainer;
 import net.minecraft.client.gui.screen.inventory.InventoryScreen;
 //import net.minecraft.client.gui.GuiScreen;
 //import net.minecraft.client.gui.inventory.GuiContainer;
@@ -14,6 +17,7 @@ import net.minecraft.client.gui.screen.inventory.InventoryScreen;
 //import net.minecraft.client.gui.inventory.GuiInventory;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.inventory.container.Slot;
+import net.minecraft.util.FrameTimer;
 //import net.minecraft.creativetab.CreativeTabs;
 //import net.minecraft.entity.player.EntityPlayer;
 //import net.minecraft.inventory.Slot;
@@ -33,6 +37,7 @@ import net.minecraftforge.common.MinecraftForge;
 //import org.lwjgl.input.Mouse;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -133,9 +138,9 @@ public class ControllerInput
 
             this.moveMouseToClosestSlot(moving, mc.currentScreen);
 
-            if(mc.currentScreen instanceof GuiContainerCreative)
+            if(mc.currentScreen instanceof CreativeScreen)
             {
-                this.handleCreativeScrolling((GuiContainerCreative) mc.currentScreen, controller);
+                this.handleCreativeScrolling((CreativeScreen) mc.currentScreen, controller);
             }
         }
     }
@@ -153,7 +158,7 @@ public class ControllerInput
                 float partialTicks = Minecraft.getInstance().getRenderPartialTicks();
                 int mouseX = (int) (prevTargetMouseX + (targetMouseX - prevTargetMouseX) * partialTicks + 0.5F);
                 int mouseY = (int) (prevTargetMouseY + (targetMouseY - prevTargetMouseY) * partialTicks + 0.5F);
-                Mouse.setCursorPosition(mouseX, mouseY);
+                Mouse.setCursorPosition(mouseX, mouseY); //Might have to use Reflection to access Cursor Position
             }
         }
     }
@@ -179,14 +184,14 @@ public class ControllerInput
             if(controller.getRThumbStickXValue() != 0.0F || controller.getRThumbStickYValue() != 0.0F)
             {
                 lastUse = 100;
-                ControllerEvent.Turn turnEvent = new ControllerEvent.Turn(controller, 40.0F * ((Minecraft.getInstance().gameSettings.mouseSensitivity * 0.875f) + 0.125f), 30.0F * ((Minecraft.getInstance().gameSettings.mouseSensitivity * 0.875f) + 0.125f));
+                ControllerEvent.Turn turnEvent = new ControllerEvent.Turn(controller, 40.0f * (((float)Minecraft.getInstance().gameSettings.mouseSensitivity * 0.875f) + 0.125f), 30.0f * (((float)Minecraft.getInstance().gameSettings.mouseSensitivity * 0.875f) + 0.125f));
                 if(!MinecraftForge.EVENT_BUS.post(turnEvent))
                 {
                 	FrameTimer frameTimer = mc.getFrameTimer();
                 	float framerateMultiplier = frameTimer.getFrames()[frameTimer.getIndex() >= 1 ? frameTimer.getIndex() - 1 : frameTimer.getIndex() + 239] / (1000000000f / 60f);
                     float rotationYaw = turnEvent.getYawSpeed() * (controller.getRThumbStickXValue() > 0.0F ? 1 : -1) * Math.abs(controller.getRThumbStickXValue()) * framerateMultiplier;
                     float rotationPitch = turnEvent.getPitchSpeed() * (controller.getRThumbStickYValue() > 0.0F ? 1 : -1) * Math.abs(controller.getRThumbStickYValue()) * framerateMultiplier;
-                    player.turn(rotationYaw, rotationPitch);
+                    player.rotateTowards(rotationYaw, rotationPitch); //Suspicious, does this only apply for one tick?
                 }
             }
         }
@@ -307,9 +312,9 @@ public class ControllerInput
             }
         }
 
-        if(controller.isButtonPressed(Buttons.LEFT_TRIGGER) && mc.rightClickDelayTimer == 0 && !mc.player.isHandActive())
+        if(controller.isButtonPressed(Buttons.LEFT_TRIGGER) && !mc.player.isHandActive()) //Removing delay timer, automatic in 1.14?
         {
-            mc.rightClickMouse();
+        	mc.keyboardListener.onKeyEvent(mc.mainWindow.getHandle(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_1, -1, org.lwjgl.glfw.GLFW.GLFW_PRESS , 0);
         }
 		
 		controller.pushOldStates();
@@ -354,13 +359,13 @@ public class ControllerInput
             {
             	if(mc.currentScreen == null)
                 {
-                    mc.displayInGameMenu();
+                    mc.displayInGameMenu(true);
                 }
                 else if(mc.player != null)
                 {
                     mc.player.closeScreen();
                 }
-                else if(mc.currentScreen instanceof GuiIngameMenu)
+                else if(mc.currentScreen instanceof IngameMenuScreen)
                 {
                 	mc.displayGuiScreen(null);
                 }
@@ -378,9 +383,9 @@ public class ControllerInput
                 {
                     mc.player.inventory.changeCurrentItem(1);
                 }
-                else if(mc.currentScreen instanceof GuiContainerCreative)
+                else if(mc.currentScreen instanceof CreativeScreen)
                 {
-                    scrollCreativeTabs((GuiContainerCreative) mc.currentScreen, -1);
+                    scrollCreativeTabs((CreativeScreen) mc.currentScreen, -1);
                 }
             }
             else if(button == Buttons.RIGHT_BUMPER)
@@ -389,9 +394,9 @@ public class ControllerInput
                 {
                     mc.player.inventory.changeCurrentItem(-1);
                 }
-                else if(mc.currentScreen instanceof GuiContainerCreative)
+                else if(mc.currentScreen instanceof CreativeScreen)
                 {
-                    scrollCreativeTabs((GuiContainerCreative) mc.currentScreen, 1);
+                    scrollCreativeTabs((CreativeScreen) mc.currentScreen, 1);
                 }
             }
             else if(button == Buttons.A && mc.currentScreen != null)
@@ -423,15 +428,16 @@ public class ControllerInput
                 {
                     if(button == Buttons.RIGHT_TRIGGER)
                     {
-                        mc.clickMouse();
+                        //mc.clickMouse();
+                    	mc.keyboardListener.onKeyEvent(mc.mainWindow.getHandle(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_1, -1, org.lwjgl.glfw.GLFW.GLFW_PRESS , 0);
                     }
                     else if(button == Buttons.LEFT_TRIGGER)
                     {
-                        mc.rightClickMouse();
+                    	mc.keyboardListener.onKeyEvent(mc.mainWindow.getHandle(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_2, -1, org.lwjgl.glfw.GLFW.GLFW_PRESS , 0);
                     }
                     else if(button == Buttons.RIGHT_THUMB_STICK)
                     {
-                        mc.middleClickMouse();
+                    	mc.keyboardListener.onKeyEvent(mc.mainWindow.getHandle(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_3, -1, org.lwjgl.glfw.GLFW.GLFW_PRESS , 0);
                     }
                 }
             }
@@ -451,7 +457,7 @@ public class ControllerInput
      */
     private void cycleThirdPersonView()
     {
-        Minecraft mc = Minecraft.getMinecraft();
+        Minecraft mc = Minecraft.getInstance();
 
         mc.gameSettings.thirdPersonView++;
         if(mc.gameSettings.thirdPersonView > 2)
@@ -568,11 +574,11 @@ public class ControllerInput
         }
     }
 
-    private void handleCreativeScrolling(GuiContainerCreative creative, Controller controller)
+    private void handleCreativeScrolling(CreativeScreen creative, Controller controller)
     {
         try
         {
-            int i = (((GuiContainerCreative.ContainerCreative) creative.inventorySlots).itemList.size() + 9 - 1) / 9 - 5;
+            int i = (creative.getContainer().inventorySlots.size() + 9 - 1) / 9 - 5;
             int dir = 0;
 
             if(controller.isButtonPressed(Buttons.DPAD_UP) || controller.getRThumbStickYValue() >= 0.8F)
@@ -606,17 +612,19 @@ public class ControllerInput
      * @param gui the gui instance
      * @param button the button to click with
      */
-    private void invokeMouseClick(GuiScreen gui, int button)
+    private void invokeMouseClick(Screen gui, int button)
     {
         Minecraft mc = Minecraft.getInstance();
         if(gui != null)
         {
-            int guiX = Mouse.getX() * gui.width / mc.displayWidth;
-            int guiY = gui.height - Mouse.getY() * gui.height / mc.displayHeight - 1;
+            //int guiX = Mouse.getX() * gui.width / mc.displayWidth;
+            //int guiY = gui.height - Mouse.getY() * gui.height / mc.displayHeight - 1;
+        	int mouseX = (int) (mc.mouseHelper.getMouseX() * gui.width / mc.mainWindow.getWidth());
+            int mouseY = (int) (gui.height - mc.mouseHelper.getMouseY() * gui.height / mc.mainWindow.getHeight() - 1);
 
             try
             {
-                Field eventButton = ReflectionHelper.findField(GuiScreen.class, "eventButton", "field_146287_f");
+                /*Field eventButton = ReflectionHelper.findField(GuiScreen.class, "eventButton", "field_146287_f");
                 eventButton.setAccessible(true);
                 eventButton.set(gui, button);
 
@@ -626,7 +634,10 @@ public class ControllerInput
 
                 Method mouseClicked = ReflectionHelper.findMethod(GuiScreen.class, "mouseClicked", "func_73864_a", int.class, int.class, int.class);
                 mouseClicked.setAccessible(true);
-                mouseClicked.invoke(gui, guiX, guiY, button);
+                mouseClicked.invoke(gui, guiX, guiY, button); */
+            	mc.keyboardListener.onKeyEvent(mc.mainWindow.getHandle(), button, -1, org.lwjgl.glfw.GLFW.GLFW_PRESS, 0);
+            	
+            	
             }
             catch(IllegalAccessException | InvocationTargetException e)
             {
@@ -642,24 +653,38 @@ public class ControllerInput
      * @param gui the gui instance
      * @param button the button to click with
      */
-    private void invokeMouseReleased(GuiScreen gui, int button)
+    private void invokeMouseReleased(Screen gui, int button)
     {
         Minecraft mc = Minecraft.getInstance();
         if(gui != null)
         {
-            int mouseX = mc.mouseHelper.getMouseX() * gui.width / mc.displayWidth;
-            int mouseY = gui.height - mc.mouseHelper.getMouseY() * gui.height / mc.displayHeight - 1;
+            int mouseX = (int) mc.mouseHelper.getMouseX() * gui.width / mc.mainWindow.getWidth();
+            int mouseY =  (int) (gui.height - mc.mouseHelper.getMouseY() * gui.height / mc.mainWindow.getHeight() - 1);
 
             try
             {
-                Field eventButton = ReflectionHelper.findField(GuiScreen.class, "eventButton", "field_146287_f");
+                /*Field eventButton = ObfuscationReflectionHelper.findField(GuiScreen.class, "eventButton", "field_146287_f");
                 eventButton.setAccessible(true);
                 eventButton.set(gui, -1);
 
                 //Resets the mouse straight away
-                Method mouseReleased = ReflectionHelper.findMethod(GuiScreen.class, "mouseReleased", "func_146286_b", int.class, int.class, int.class);
+                Method mouseReleased = ObfuscationReflectionHelper.findMethod(GuiScreen.class, "mouseReleased", "func_146286_b", int.class, int.class, int.class);
                 mouseReleased.setAccessible(true);
-                mouseReleased.invoke(gui, mouseX, mouseY, button);
+                mouseReleased.invoke(gui, mouseX, mouseY, button); */
+            	mc.keyboardListener.onKeyEvent(mc.mainWindow.getHandle(), button, -1, org.lwjgl.glfw.GLFW.GLFW_RELEASE, 0);
+            	/*
+            	if (mc.mouseHelper.isLeftDown()) {
+            		mc.keyboardListener.onKeyEvent(mc.mainWindow.getHandle(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_1, -1, org.lwjgl.glfw.GLFW.GLFW_RELEASE, 0);
+            	} else if (mc.mouseHelper.isRightDown()) {
+            		mc.keyboardListener.onKeyEvent(mc.mainWindow.getHandle(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_2, -1, org.lwjgl.glfw.GLFW.GLFW_RELEASE, 0);
+            	} else if (mc.mouseHelper.isMiddleDown()) {
+            		mc.keyboardListener.onKeyEvent(mc.mainWindow.getHandle(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_3, -1, org.lwjgl.glfw.GLFW.GLFW_RELEASE, 0);
+            	} else {
+            		mc.keyboardListener.onKeyEvent(mc.mainWindow.getHandle(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_1, -1, org.lwjgl.glfw.GLFW.GLFW_RELEASE, 0);
+            		mc.keyboardListener.onKeyEvent(mc.mainWindow.getHandle(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_2, -1, org.lwjgl.glfw.GLFW.GLFW_RELEASE, 0);
+            		mc.keyboardListener.onKeyEvent(mc.mainWindow.getHandle(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_3, -1, org.lwjgl.glfw.GLFW.GLFW_RELEASE, 0);
+            	} */
+            	
             }
             catch(IllegalAccessException | InvocationTargetException e)
             {
@@ -684,7 +709,7 @@ public class ControllerInput
                 isLeftClicking = true;
             }
         }
-        return mc.currentScreen == null && isLeftClicking && mc.inGameHasFocus;
+        return mc.currentScreen == null && isLeftClicking && mc.isGameFocused();
     }
 
     /**
