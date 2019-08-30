@@ -17,6 +17,7 @@ import net.minecraft.client.gui.screen.inventory.InventoryScreen;
 //import net.minecraft.client.gui.inventory.GuiInventory;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.inventory.container.Slot;
+import net.minecraft.item.ItemGroup;
 import net.minecraft.util.FrameTimer;
 //import net.minecraft.creativetab.CreativeTabs;
 //import net.minecraft.entity.player.EntityPlayer;
@@ -67,7 +68,7 @@ public class ControllerInput
     private int dropCounter = -1;
     
 
-    //@SubscribeEvent
+    @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event)
     {
         if(event.phase == TickEvent.Phase.START)
@@ -85,8 +86,8 @@ public class ControllerInput
                 return;
 
             Minecraft mc = Minecraft.getInstance();
-            //if(mc.inGameHasFocus)
-            //    return;
+            if(mc.isGameFocused())
+                return;
 
             if(mc.currentScreen == null || mc.currentScreen instanceof GuiControllerLayout)
                 return;
@@ -418,7 +419,7 @@ public class ControllerInput
             {
                 invokeMouseClick(mc.currentScreen, 0);
             }
-            else if(button == Buttons.DPAD_UP && mc.inGameHasFocus && mc.currentScreen == null)
+            else if(button == Buttons.DPAD_UP && mc.isGameFocused() && mc.currentScreen == null)
             {
                 cycleThirdPersonView();
             }
@@ -467,34 +468,34 @@ public class ControllerInput
 
         if(mc.gameSettings.thirdPersonView == 0)
         {
-            mc.entityRenderer.loadEntityShader(mc.getRenderViewEntity());
+            mc.setRenderViewEntity(mc.getRenderViewEntity());
         }
         else if(mc.gameSettings.thirdPersonView == 1)
         {
-            mc.entityRenderer.loadEntityShader(null);
+            mc.setRenderViewEntity(null);
         }
     }
 
-    private void scrollCreativeTabs(GuiContainerCreative creative, int dir)
+    private void scrollCreativeTabs(CreativeScreen creative, int dir)
     {
         lastUse = 100;
 
         try
         {
-            Method method = ReflectionHelper.findMethod(GuiContainerCreative.class, "setCurrentCreativeTab", "func_147050_b", CreativeTabs.class);
+            Method method = ObfuscationReflectionHelper.findMethod(CreativeScreen.class, "setCurrentCreativeTab", ItemGroup.class);
             method.setAccessible(true);
             if(dir > 0)
             {
-                if(creative.getSelectedTabIndex() < CreativeTabs.CREATIVE_TAB_ARRAY.length - 1)
+                if(creative.getSelectedTabIndex() < ItemGroup.GROUPS.length - 1)
                 {
-                    method.invoke(creative, CreativeTabs.CREATIVE_TAB_ARRAY[creative.getSelectedTabIndex() + 1]);
+                    method.invoke(creative, ItemGroup.GROUPS[creative.getSelectedTabIndex() + 1]);
                 }
             }
             else if(dir < 0)
             {
                 if(creative.getSelectedTabIndex() > 0)
                 {
-                    method.invoke(creative, CreativeTabs.CREATIVE_TAB_ARRAY[creative.getSelectedTabIndex() - 1]);
+                    method.invoke(creative, ItemGroup.GROUPS[creative.getSelectedTabIndex() - 1]);
                 }
             }
         }
@@ -590,14 +591,14 @@ public class ControllerInput
                 dir = -1;
             }
 
-            Field field = ReflectionHelper.findField(GuiContainerCreative.class, "currentScroll", "field_147067_x");
+            Field field = ObfuscationReflectionHelper.findField(CreativeScreen.class, "currentScroll");
             field.setAccessible(true);
 
             float currentScroll = field.getFloat(creative);
             currentScroll = (float) ((double) currentScroll - (double) dir / (double) i);
             currentScroll = MathHelper.clamp(currentScroll, 0.0F, 1.0F);
             field.setFloat(creative, currentScroll);
-            ((GuiContainerCreative.ContainerCreative) creative.inventorySlots).scrollTo(currentScroll);
+            creative.getContainer().scrollTo(currentScroll);
         }
         catch(IllegalAccessException e)
         {
@@ -639,7 +640,7 @@ public class ControllerInput
             	
             	
             }
-            catch(IllegalAccessException | InvocationTargetException e)
+            catch(Exception e)
             {
                 e.printStackTrace();
             }
