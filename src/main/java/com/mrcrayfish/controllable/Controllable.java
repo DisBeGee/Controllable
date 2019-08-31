@@ -9,14 +9,25 @@ import com.studiohartman.jamepad.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.I18n;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.client.FMLFileResourcePack;
-import net.minecraftforge.fml.client.FMLFolderResourcePack;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.fml.ModContainer;
+//import net.minecraftforge.fml.client.FMLFileResourcePack;
+//import net.minecraftforge.fml.client.FMLFolderResourcePack;
 import net.minecraftforge.fml.common.*;
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLConfig;
+import net.minecraftforge.fml.loading.moddiscovery.ModFile;
+import net.minecraftforge.fml.loading.moddiscovery.ModFileInfo;
+import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
+
+//import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+//import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+//import net.minecraftforge.fml.common.gameevent.TickEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 import javax.annotation.Nullable;
 import java.io.File;
@@ -29,7 +40,8 @@ import java.util.List;
  * Author: MrCrayfish
  */
 //@Mod(modid = Reference.MOD_ID, name = Reference.MOD_NAME, version = Reference.MOD_VERSION, acceptedMinecraftVersions = "1.12.2", clientSideOnly = true)
-public class Controllable extends DummyModContainer
+@Mod("controllable")
+public class Controllable
 {
     public static final Logger LOGGER = LogManager.getLogger(Reference.MOD_NAME);
 
@@ -43,13 +55,20 @@ public class Controllable extends DummyModContainer
 
     public Controllable()
     {
-        super(new ModMetadata());
+    	/*
+    	ModFileInfo modFileInfo = new ModFileInfo(null, null);
+    	
+        super(new ModInfo(null, null));
         ModMetadata meta = this.getMetadata();
         meta.modId = Reference.MOD_ID;
         meta.name = Reference.MOD_NAME;
         meta.version = Reference.MOD_VERSION;
         meta.authorList = Collections.unmodifiableList(Lists.newArrayList("MrCrayfish", "SuperKael"));
-        meta.url = "https://mrcrayfish.com/mod?id=controllable";
+        meta.url = "https://mrcrayfish.com/mod?id=controllable"; */
+        
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
+        
+        MinecraftForge.EVENT_BUS.register(this);
     }
 
     @Nullable
@@ -63,34 +82,36 @@ public class Controllable extends DummyModContainer
         return selectedControllerIndex;
     }
 
-
+    /* Replaced by MinecraftForge.EVENT_BUS.register(this);
     @Override
     public boolean registerBus(final EventBus bus, final LoadController controller)
     {
         bus.register(this);
         return true;
-    }
-
+    }  */
+    
+    /* Not sure what to replace with
     @Override
     public File getSource()
     {
         return ControllablePlugin.LOCATION;
-    }
+    } */
 
+    /* Not sure waht to replace with
     @Override
     public boolean shouldLoadInEnvironment()
     {
         return FMLCommonHandler.instance().getSide().isClient();
-    }
-
+    }*/
+    
+    /*
     @Override
     public Class<?> getCustomResourcePackClass()
     {
         return this.getSource().isDirectory() ? FMLFolderResourcePack.class : FMLFileResourcePack.class;
-    }
+    } */
 
-    @Subscribe
-    public void onPreInit(FMLPreInitializationEvent event)
+    public void setup(final FMLCommonSetupEvent event)
     {
         //ControllerProperties.load(event.getModConfigurationDirectory());
 
@@ -101,7 +122,8 @@ public class Controllable extends DummyModContainer
         Controllable.connectedControllerNames = getConnectedControllerNames();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> Controllable.manager.quitSDLGamepad()));
 
-        ControllerProperties.load(event.getModConfigurationDirectory());
+        ControllerProperties.load(new File(FMLConfig.defaultConfigPath()));
+        ;
 
         /* Attempts to load the first controller connected */
         ControllerIndex index = manager.getControllerIndex(0);
@@ -110,7 +132,7 @@ public class Controllable extends DummyModContainer
             setController(new Controller(index));
         }
 
-        Mappings.load(event.getModConfigurationDirectory());
+        Mappings.load(new File(FMLConfig.defaultConfigPath()));
 
         /* Registers events */
         MinecraftForge.EVENT_BUS.register(this);
@@ -157,7 +179,7 @@ public class Controllable extends DummyModContainer
 
         manager.update();
 
-        Minecraft mc = Minecraft.getMinecraft();
+        Minecraft mc = Minecraft.getInstance();
         int controllersCount = manager.getNumControllers();
         if(controllersCount != currentControllerCount)
         {
@@ -189,7 +211,7 @@ public class Controllable extends DummyModContainer
             if(mc.player != null)
             {
                 String controllerName = newControllers.size() > 0 ? newControllers.get(0) : I18n.format("controllable.toast.controller");
-                Minecraft.getMinecraft().getToastGui().add(new ControllerToast(connected, controllerName));
+                Minecraft.getInstance().getToastGui().add(new ControllerToast(connected, controllerName));
             }
         }
 
