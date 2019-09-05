@@ -2,7 +2,7 @@ package com.mrcrayfish.controllable.client;
 
 import com.mrcrayfish.controllable.Controllable;
 import com.mrcrayfish.controllable.client.gui.GuiButtonController;
-import com.mrcrayfish.controllable.client.gui.GuiControllerSelection;
+//import com.mrcrayfish.controllable.client.gui.GuiControllerSelection;
 import com.studiohartman.jamepad.ControllerManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.OptionsScreen;
@@ -30,7 +30,7 @@ public class GuiEvents
 		@Override
 		public void onPress(Button p_onPress_1_) {
 			// TODO Auto-generated method stub
-			Minecraft.getInstance().displayGuiScreen(new GuiControllerSelection(manager, true));
+			//Minecraft.getInstance().displayGuiScreen(new GuiControllerSelection(manager, true)); Disable GuiControllerSelection til basic functionality confirmed
 		}
     	
     }
