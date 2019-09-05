@@ -687,7 +687,7 @@ public class ControllerInput
             	} */
             	
             }
-            catch(IllegalAccessException | InvocationTargetException e)
+            catch(Exception e)
             {
                 e.printStackTrace();
             }
@@ -735,6 +735,7 @@ public class ControllerInput
     /**
      * Used in order to fix the quick move check in inventories. This method is linked via ASM.
      */
+    /*
     public static boolean canQuickMove()
     {
         boolean isSneaking = (Keyboard.isKeyDown(42) || Keyboard.isKeyDown(54));
@@ -747,7 +748,7 @@ public class ControllerInput
             }
         }
         return isSneaking;
-    }
+    } */
 }
 
 //SCUFFED PS3
