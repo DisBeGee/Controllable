@@ -5,11 +5,13 @@ import com.mrcrayfish.controllable.client.Controller;
 import com.mrcrayfish.controllable.client.Mappings;
 import com.studiohartman.jamepad.ControllerIndex;
 import com.studiohartman.jamepad.ControllerManager;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiIngameMenu;
-import net.minecraft.client.gui.GuiScreen;
+//import net.minecraft.client.gui.GuiButton;
+//import net.minecraft.client.gui.GuiIngameMenu;
+//import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraftforge.fml.client.config.GuiButtonExt;
 
 import java.io.IOException;
 
@@ -24,22 +26,23 @@ public class GuiControllerSelection extends Screen
     private GuiListControllers listControllers;
 
     @SuppressWarnings("unused")
-	private GuiButton btnSelect;
+	private GuiButtonExt btnSelect;
     
-    private GuiButton btnConfigure;
+    private GuiButtonExt btnConfigure;
     
     @SuppressWarnings("unused")
-    private GuiButton btnCancel;
+    private GuiButtonExt btnCancel;
 
     public GuiControllerSelection(ControllerManager manager, boolean mainMenu)
     {
+    	super(new TranslationTextComponent("controllers.selection"));
         this.manager = manager;
         this.mainMenu = mainMenu;
         this.controllerCount = manager.getNumControllers();
     }
 
     @Override
-    public void initGui()
+    public void init()
     {
         listControllers = new GuiListControllers(manager, mc, this.width, this.height, 32, this.height - 44, 20);
         this.addButton(btnSelect = new GuiButton(0, this.width / 2 - 154, this.height - 32, 100, 20, I18n.format("controllable.gui.select"))); //TODO localize I18n.format("selectWorld.select")

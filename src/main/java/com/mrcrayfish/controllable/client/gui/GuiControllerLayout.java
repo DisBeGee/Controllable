@@ -1,7 +1,10 @@
 package com.mrcrayfish.controllable.client.gui;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mrcrayfish.controllable.Reference;
 import com.mrcrayfish.controllable.client.Buttons;
+
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
 //import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.util.ResourceLocation;
@@ -49,15 +52,15 @@ public class GuiControllerLayout extends Screen
     @Override
     public void render(int mouseX, int mouseY, float partialTicks)
     {
-        this.drawDefaultBackground();
+        this.renderBackground();
 
         GlStateManager.enableBlend();
-        mc.getTextureManager().bindTexture(TEXTURE);
+        Minecraft.getInstance().getTextureManager().bindTexture(TEXTURE);
         int width = 38 * 5;
         int height = 29 * 5;
         int x = this.width / 2 - width / 2;
         int y = this.height / 2 - 50;
-        drawScaledCustomSizeModalRect(x, y, 50, 0, 38, 29, width, height, 256, 256);
+        blit(x, y, 50, 0, 38, 29, width, height, 256, 256);
         GlStateManager.disableBlend();
         controllerButtons.forEach(controllerButton -> controllerButton.draw(x, y, mouseX, mouseY));
     }
