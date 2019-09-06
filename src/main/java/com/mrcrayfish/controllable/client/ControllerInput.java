@@ -3,6 +3,7 @@ package com.mrcrayfish.controllable.client;
 import com.mrcrayfish.controllable.Controllable;
 import com.mrcrayfish.controllable.client.gui.GuiControllerLayout;
 import com.mrcrayfish.controllable.event.ControllerEvent;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.gui.screen.IngameMenuScreen;
@@ -18,6 +19,8 @@ import net.minecraft.client.gui.screen.inventory.InventoryScreen;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.inventory.container.Slot;
 import net.minecraft.item.ItemGroup;
+import net.minecraft.network.play.client.CPlayerDiggingPacket;
+import net.minecraft.util.Direction;
 import net.minecraft.util.FrameTimer;
 //import net.minecraft.creativetab.CreativeTabs;
 //import net.minecraft.entity.player.EntityPlayer;
@@ -43,6 +46,8 @@ import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+
+import org.lwjgl.glfw.GLFW;
 
 /**
  * Author: MrCrayfish
@@ -159,7 +164,8 @@ public class ControllerInput
                 float partialTicks = Minecraft.getInstance().getRenderPartialTicks();
                 int mouseX = (int) (prevTargetMouseX + (targetMouseX - prevTargetMouseX) * partialTicks + 0.5F);
                 int mouseY = (int) (prevTargetMouseY + (targetMouseY - prevTargetMouseY) * partialTicks + 0.5F);
-                Mouse.setCursorPosition(mouseX, mouseY); //Might have to use Reflection to access Cursor Position
+                //Mouse.setCursorPosition(mouseX, mouseY); //Might have to use Reflection to access Cursor Position
+                GLFW.glfwSetCursorPos(Minecraft.getInstance().mainWindow.getHandle(), mouseX, mouseX);
             }
         }
     }
@@ -412,7 +418,7 @@ public class ControllerInput
                 }
                 else if(mc.player != null && !mc.player.isSpectator() && mc.getConnection() != null)
                 {
-                    mc.getConnection().sendPacket(new CPacketPlayerDigging(CPacketPlayerDigging.Action.SWAP_HELD_ITEMS, BlockPos.ORIGIN, EnumFacing.DOWN));
+                    mc.getConnection().getNetworkManager().sendPacket(new CPlayerDiggingPacket(CPlayerDiggingPacket.Action.SWAP_HELD_ITEMS, BlockPos.ZERO, Direction.DOWN));
                 }
             }
             else if(button == Buttons.B && mc.currentScreen != null && mc.player != null && mc.player.inventory.getItemStack().isEmpty())

@@ -106,5 +106,8 @@ jar {
         attributes 'FMLAT': 'controllable_at.cfg'
         attributes 'FMLCorePlugin': 'com.mrcrayfish.controllable.asm.ControllablePlugin'
     }
+    from {
+        configurations.compileOnly.collect { it.isDirectory() ? it : zipTree(it) }
+    }
 }
 
