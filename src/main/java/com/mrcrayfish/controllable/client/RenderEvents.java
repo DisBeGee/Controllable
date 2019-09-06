@@ -224,10 +224,12 @@ public class RenderEvents
         {
             if(!MinecraftForge.EVENT_BUS.post(new RenderAvailableActionsEvent()))
             {
-                IngameGui guiIngame = mc.ingameGUI;
+                //IngameGui guiIngame = mc.ingameGUI;
                 
                 boolean isChatVisible = false;
                 //Have no idea if the below even works
+                //Note: Does not work. TODO: Fix this drawnChatLines feature that no longer works due to Minecraft privatizing drawnChatLines
+                /*
                 try {
 	                Field field = ObfuscationReflectionHelper.findField(NewChatGui.class, "drawnChatLines"); //How insanely inefficient is this? Calling a reflection every renderScreen tick?
 	                field.setAccessible(true);
@@ -236,7 +238,7 @@ public class RenderEvents
 	                isChatVisible = mc.currentScreen == null && chatgui.stream().anyMatch(chatLine -> guiIngame.getTicks() - chatLine.getUpdatedCounter() < 200); //TODO no idea if this will work
                 } catch (Exception e) {
                 	e.printStackTrace();
-                }
+                } */
                 int leftIndex = 0;
                 int rightIndex = 0;
                 for(Integer button : actions.keySet())

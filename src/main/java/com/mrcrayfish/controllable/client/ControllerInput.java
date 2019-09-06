@@ -197,7 +197,8 @@ public class ControllerInput
                 	FrameTimer frameTimer = mc.getFrameTimer();
                 	float framerateMultiplier = frameTimer.getFrames()[frameTimer.getIndex() >= 1 ? frameTimer.getIndex() - 1 : frameTimer.getIndex() + 239] / (1000000000f / 60f);
                     float rotationYaw = turnEvent.getYawSpeed() * (controller.getRThumbStickXValue() > 0.0F ? 1 : -1) * Math.abs(controller.getRThumbStickXValue()) * framerateMultiplier;
-                    float rotationPitch = turnEvent.getPitchSpeed() * (controller.getRThumbStickYValue() > 0.0F ? 1 : -1) * Math.abs(controller.getRThumbStickYValue()) * framerateMultiplier;
+                    //Why multiply this by -1? Seems like a strange bug with a simple workaround... TODO investigate this
+                    float rotationPitch = -1 * turnEvent.getPitchSpeed() * (controller.getRThumbStickYValue() > 0.0F ? 1 : -1) * Math.abs(controller.getRThumbStickYValue()) * framerateMultiplier;
                     player.rotateTowards(rotationYaw, rotationPitch); //Suspicious, does this only apply for one tick?
                 }
             }
