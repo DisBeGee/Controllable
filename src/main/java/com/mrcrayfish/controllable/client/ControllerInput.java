@@ -5,6 +5,7 @@ import com.mrcrayfish.controllable.client.gui.GuiControllerLayout;
 import com.mrcrayfish.controllable.event.ControllerEvent;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.MouseHelper;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.gui.screen.IngameMenuScreen;
 import net.minecraft.client.gui.screen.Screen;
@@ -29,6 +30,7 @@ import net.minecraft.util.FrameTimer;
 //import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
+import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.InputUpdateEvent;
 import net.minecraftforge.common.MinecraftForge;
@@ -47,6 +49,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.lwjgl.glfw.GLFW;
 
 /**
@@ -72,6 +76,7 @@ public class ControllerInput
 
     private int dropCounter = -1;
     
+    private static Method mouseButtonCallbackMethod = ObfuscationReflectionHelper.findMethod(net.minecraft.client.MouseHelper.class, "func_198023_a", long.class, int.class, int.class, int.class);
 
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event)
@@ -194,8 +199,8 @@ public class ControllerInput
                 ControllerEvent.Turn turnEvent = new ControllerEvent.Turn(controller, 40.0f * (((float)Minecraft.getInstance().gameSettings.mouseSensitivity * 0.875f) + 0.125f), 30.0f * (((float)Minecraft.getInstance().gameSettings.mouseSensitivity * 0.875f) + 0.125f));
                 if(!MinecraftForge.EVENT_BUS.post(turnEvent))
                 {
-                	FrameTimer frameTimer = mc.getFrameTimer();
-                	float framerateMultiplier = frameTimer.getFrames()[frameTimer.getIndex() >= 1 ? frameTimer.getIndex() - 1 : frameTimer.getIndex() + 239] / (1000000000f / 60f);
+                    FrameTimer frameTimer = mc.getFrameTimer();
+                    float framerateMultiplier = frameTimer.getFrames()[frameTimer.getIndex() >= 1 ? frameTimer.getIndex() - 1 : frameTimer.getIndex() + 239] / (1000000000f / 60f);
                     float rotationYaw = turnEvent.getYawSpeed() * (controller.getRThumbStickXValue() > 0.0F ? 1 : -1) * Math.abs(controller.getRThumbStickXValue()) * framerateMultiplier;
                     //Why multiply this by -1? Seems like a strange bug with a simple workaround... TODO investigate this
                     float rotationPitch = -1 * turnEvent.getPitchSpeed() * (controller.getRThumbStickYValue() > 0.0F ? 1 : -1) * Math.abs(controller.getRThumbStickYValue()) * framerateMultiplier;
@@ -307,25 +312,30 @@ public class ControllerInput
             if(controller.isButtonPressed(Buttons.A))
             {
                 if (!controller.wasButtonPressed(Buttons.A))
-            	{
-            		KeyBinding.setKeyBindState(Minecraft.getInstance().gameSettings.keyBindJump.getKey(), true);
-            	}
+                {
+                    KeyBinding.setKeyBindState(Minecraft.getInstance().gameSettings.keyBindJump.getKey(), true);
+                }
             }
             else
             {
-            	if (controller.wasButtonPressed(Buttons.A))
-            	{
-            		KeyBinding.setKeyBindState(Minecraft.getInstance().gameSettings.keyBindJump.getKey(), false);
-            	}
+                if (controller.wasButtonPressed(Buttons.A))
+                {
+                    KeyBinding.setKeyBindState(Minecraft.getInstance().gameSettings.keyBindJump.getKey(), false);
+                }
             }
         }
 
-        if(controller.isButtonPressed(Buttons.LEFT_TRIGGER) && !mc.player.isHandActive()) //Removing delay timer, automatic in 1.14?
+        if(controller.isButtonPressed(Buttons.LEFT_TRIGGER) && !mc.player.isHandActive()) //TODO need to reimplement delay timer, it has been privatized
         {
-        	mc.keyboardListener.onKeyEvent(mc.mainWindow.getHandle(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_1, -1, org.lwjgl.glfw.GLFW.GLFW_PRESS , 0);
+            try {
+                mouseButtonCallbackMethod.invoke(mc.mouseHelper, mc.mainWindow.getHandle(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_2, org.lwjgl.glfw.GLFW.GLFW_PRESS , 0);
+            } catch (Exception e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
-		
-		controller.pushOldStates();
+        
+        controller.pushOldStates();
     }
 
     public void handleButtonInput(Controller controller, int button, boolean state)
@@ -363,9 +373,9 @@ public class ControllerInput
                     mc.player.closeScreen();
                 }
             }
-			else if(button == Buttons.START)
+            else if(button == Buttons.START)
             {
-            	if(mc.currentScreen == null)
+                if(mc.currentScreen == null)
                 {
                     mc.displayInGameMenu(true);
                 }
@@ -375,7 +385,7 @@ public class ControllerInput
                 }
                 else if(mc.currentScreen instanceof IngameMenuScreen)
                 {
-                	mc.displayGuiScreen(null);
+                    mc.displayGuiScreen(null);
                 }
             }
             else if(button == Buttons.LEFT_THUMB_STICK)
@@ -436,16 +446,28 @@ public class ControllerInput
                 {
                     if(button == Buttons.RIGHT_TRIGGER)
                     {
-                        //mc.clickMouse();
-                    	mc.keyboardListener.onKeyEvent(mc.mainWindow.getHandle(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_1, -1, org.lwjgl.glfw.GLFW.GLFW_PRESS , 0);
+                        try {
+                            mouseButtonCallbackMethod.invoke(mc.mouseHelper, mc.mainWindow.getHandle(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_1, org.lwjgl.glfw.GLFW.GLFW_PRESS, 0);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        
                     }
                     else if(button == Buttons.LEFT_TRIGGER)
                     {
-                    	mc.keyboardListener.onKeyEvent(mc.mainWindow.getHandle(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_2, -1, org.lwjgl.glfw.GLFW.GLFW_PRESS , 0);
+                        try {
+                            mouseButtonCallbackMethod.invoke(mc.mouseHelper, mc.mainWindow.getHandle(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_2, org.lwjgl.glfw.GLFW.GLFW_PRESS , 0);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
                     else if(button == Buttons.RIGHT_THUMB_STICK)
                     {
-                    	mc.keyboardListener.onKeyEvent(mc.mainWindow.getHandle(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_3, -1, org.lwjgl.glfw.GLFW.GLFW_PRESS , 0);
+                        try {
+                            mouseButtonCallbackMethod.invoke(mc.mouseHelper, mc.mainWindow.getHandle(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_3, org.lwjgl.glfw.GLFW.GLFW_PRESS , 0);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
             }
@@ -457,6 +479,22 @@ public class ControllerInput
         else if(button == Buttons.X && mc.currentScreen != null)
         {
             invokeMouseReleased(mc.currentScreen, 1);
+        }
+        else if(button == Buttons.RIGHT_TRIGGER) 
+        {
+            try {
+                mouseButtonCallbackMethod.invoke(mc.mouseHelper, mc.mainWindow.getHandle(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_1, org.lwjgl.glfw.GLFW.GLFW_RELEASE, 0);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        else if(button == Buttons.LEFT_TRIGGER)
+        {
+            try {
+                mouseButtonCallbackMethod.invoke(mc.mouseHelper, mc.mainWindow.getHandle(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_2, org.lwjgl.glfw.GLFW.GLFW_RELEASE , 0);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -627,11 +665,12 @@ public class ControllerInput
         {
             //int guiX = Mouse.getX() * gui.width / mc.displayWidth;
             //int guiY = gui.height - Mouse.getY() * gui.height / mc.displayHeight - 1;
-        	int mouseX = (int) (mc.mouseHelper.getMouseX() * gui.width / mc.mainWindow.getWidth());
+            int mouseX = (int) (mc.mouseHelper.getMouseX() * gui.width / mc.mainWindow.getWidth());
             int mouseY = (int) (gui.height - mc.mouseHelper.getMouseY() * gui.height / mc.mainWindow.getHeight() - 1);
 
             try
             {
+                /** We may need the below later... Basic functionality works, comment out for now */
                 /*Field eventButton = ReflectionHelper.findField(GuiScreen.class, "eventButton", "field_146287_f");
                 eventButton.setAccessible(true);
                 eventButton.set(gui, button);
@@ -639,13 +678,15 @@ public class ControllerInput
                 Field lastMouseEvent = ReflectionHelper.findField(GuiScreen.class, "lastMouseEvent", "field_146288_g");
                 lastMouseEvent.setAccessible(true);
                 lastMouseEvent.set(gui, Minecraft.getSystemTime());
-
-                Method mouseClicked = ReflectionHelper.findMethod(GuiScreen.class, "mouseClicked", "func_73864_a", int.class, int.class, int.class);
-                mouseClicked.setAccessible(true);
-                mouseClicked.invoke(gui, guiX, guiY, button); */
-            	mc.keyboardListener.onKeyEvent(mc.mainWindow.getHandle(), button, -1, org.lwjgl.glfw.GLFW.GLFW_PRESS, 0);
-            	
-            	
+                */
+                
+                try {
+                    mouseButtonCallbackMethod.invoke(mc.mainWindow.getHandle(), button, org.lwjgl.glfw.GLFW.GLFW_PRESS , 0);
+                } catch (Exception e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                
             }
             catch(Exception e)
             {
@@ -666,33 +707,9 @@ public class ControllerInput
         Minecraft mc = Minecraft.getInstance();
         if(gui != null)
         {
-            int mouseX = (int) mc.mouseHelper.getMouseX() * gui.width / mc.mainWindow.getWidth();
-            int mouseY =  (int) (gui.height - mc.mouseHelper.getMouseY() * gui.height / mc.mainWindow.getHeight() - 1);
-
             try
             {
-                /*Field eventButton = ObfuscationReflectionHelper.findField(GuiScreen.class, "eventButton", "field_146287_f");
-                eventButton.setAccessible(true);
-                eventButton.set(gui, -1);
-
-                //Resets the mouse straight away
-                Method mouseReleased = ObfuscationReflectionHelper.findMethod(GuiScreen.class, "mouseReleased", "func_146286_b", int.class, int.class, int.class);
-                mouseReleased.setAccessible(true);
-                mouseReleased.invoke(gui, mouseX, mouseY, button); */
-            	mc.keyboardListener.onKeyEvent(mc.mainWindow.getHandle(), button, -1, org.lwjgl.glfw.GLFW.GLFW_RELEASE, 0);
-            	/*
-            	if (mc.mouseHelper.isLeftDown()) {
-            		mc.keyboardListener.onKeyEvent(mc.mainWindow.getHandle(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_1, -1, org.lwjgl.glfw.GLFW.GLFW_RELEASE, 0);
-            	} else if (mc.mouseHelper.isRightDown()) {
-            		mc.keyboardListener.onKeyEvent(mc.mainWindow.getHandle(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_2, -1, org.lwjgl.glfw.GLFW.GLFW_RELEASE, 0);
-            	} else if (mc.mouseHelper.isMiddleDown()) {
-            		mc.keyboardListener.onKeyEvent(mc.mainWindow.getHandle(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_3, -1, org.lwjgl.glfw.GLFW.GLFW_RELEASE, 0);
-            	} else {
-            		mc.keyboardListener.onKeyEvent(mc.mainWindow.getHandle(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_1, -1, org.lwjgl.glfw.GLFW.GLFW_RELEASE, 0);
-            		mc.keyboardListener.onKeyEvent(mc.mainWindow.getHandle(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_2, -1, org.lwjgl.glfw.GLFW.GLFW_RELEASE, 0);
-            		mc.keyboardListener.onKeyEvent(mc.mainWindow.getHandle(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_3, -1, org.lwjgl.glfw.GLFW.GLFW_RELEASE, 0);
-            	} */
-            	
+                mouseButtonCallbackMethod.invoke(mc.mouseHelper, mc.mainWindow.getHandle(), button, org.lwjgl.glfw.GLFW.GLFW_RELEASE, 0);
             }
             catch(Exception e)
             {
@@ -711,7 +728,7 @@ public class ControllerInput
         Controller controller = Controllable.getController();
         if(controller != null)
         {
-			lastUse = 100;
+            lastUse = 100;
             if(controller.isButtonPressed(Buttons.RIGHT_TRIGGER))
             {
                 isLeftClicking = true;
@@ -732,7 +749,7 @@ public class ControllerInput
         {
             if(controller.isButtonPressed(Buttons.LEFT_TRIGGER))
             {
-				lastUse = 100;
+                lastUse = 100;
                 isRightClicking = true;
             }
         }
