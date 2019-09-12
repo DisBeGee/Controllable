@@ -5,13 +5,11 @@ import com.mrcrayfish.controllable.client.gui.GuiControllerLayout;
 import com.mrcrayfish.controllable.event.ControllerEvent;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.MouseHelper;
 import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.gui.screen.IngameMenuScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.inventory.ContainerScreen;
 import net.minecraft.client.gui.screen.inventory.CreativeScreen;
-import net.minecraft.client.gui.screen.inventory.CreativeScreen.CreativeContainer;
 import net.minecraft.client.gui.screen.inventory.InventoryScreen;
 //import net.minecraft.client.gui.GuiScreen;
 //import net.minecraft.client.gui.inventory.GuiContainer;
@@ -23,24 +21,11 @@ import net.minecraft.item.ItemGroup;
 import net.minecraft.network.play.client.CPlayerDiggingPacket;
 import net.minecraft.util.Direction;
 import net.minecraft.util.FrameTimer;
-//import net.minecraft.creativetab.CreativeTabs;
-//import net.minecraft.entity.player.EntityPlayer;
-//import net.minecraft.inventory.Slot;
-//import net.minecraft.network.play.client.CPacketPlayerDigging;
-//import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
-import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.InputUpdateEvent;
 import net.minecraftforge.common.MinecraftForge;
-//import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-//import net.minecraftforge.fml.common.gameevent.TickEvent;
-//import net.minecraftforge.fml.relauncher.ReflectionHelper;
-///import net.minecraftforge.fml.relauncher.Side;
-//import net.minecraftforge.fml.relauncher.SideOnly;
-//import org.lwjgl.input.Keyboard;
-//import org.lwjgl.input.Mouse;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
@@ -79,6 +64,8 @@ public class ControllerInput
     private static Method mouseButtonCallbackMethod = ObfuscationReflectionHelper.findMethod(net.minecraft.client.MouseHelper.class, "func_198023_a", long.class, int.class, int.class, int.class);
     private static Field rightClickDelayTimer = ObfuscationReflectionHelper.findField(net.minecraft.client.Minecraft.class, "field_71467_ac");
 
+    private static final Logger LOGGER = LogManager.getLogger();
+
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event)
     {
@@ -97,12 +84,11 @@ public class ControllerInput
                 return;
 
             Minecraft mc = Minecraft.getInstance();
-            if(mc.isGameFocused())
-                return;
+            //if(mc.inGameHasFocus) TODO figure out what this is; *NOT* isGameFocused()!! That is a different function!!
+            //    return;
 
             if(mc.currentScreen == null || mc.currentScreen instanceof GuiControllerLayout)
                 return;
-
             /* Only need to run code if left thumb stick has input */
             boolean moving = controller.getLThumbStickXValue() != 0.0F || controller.getLThumbStickYValue() != 0.0F;
             if(moving)
@@ -128,7 +114,7 @@ public class ControllerInput
                     mouseSpeedX = 0.0F;
                 }
 
-                float yAxis = (controller.getLThumbStickYValue() > 0.0F ? 1 : -1) * Math.abs(controller.getLThumbStickYValue());
+                float yAxis = (controller.getLThumbStickYValue() > 0.0F ? -1 : 1) * Math.abs(controller.getLThumbStickYValue());
                 if(Math.abs(yAxis) > 0.35F)
                 {
                     mouseSpeedY = yAxis;
@@ -146,7 +132,7 @@ public class ControllerInput
             }
 
             prevXAxis = controller.getLThumbStickXValue();
-            prevYAxis = controller.getLThumbStickYValue();
+            prevYAxis = controller.getLThumbStickYValue() * -1;
 
             this.moveMouseToClosestSlot(moving, mc.currentScreen);
 
@@ -171,7 +157,7 @@ public class ControllerInput
                 int mouseX = (int) (prevTargetMouseX + (targetMouseX - prevTargetMouseX) * partialTicks + 0.5F);
                 int mouseY = (int) (prevTargetMouseY + (targetMouseY - prevTargetMouseY) * partialTicks + 0.5F);
                 //Mouse.setCursorPosition(mouseX, mouseY); //Might have to use Reflection to access Cursor Position
-                GLFW.glfwSetCursorPos(Minecraft.getInstance().mainWindow.getHandle(), mouseX, mouseX);
+                GLFW.glfwSetCursorPos(Minecraft.getInstance().mainWindow.getHandle(), mouseX, mouseY);
             }
         }
     }
@@ -685,7 +671,7 @@ public class ControllerInput
                 */
                 
                 try {
-                    mouseButtonCallbackMethod.invoke(mc.mainWindow.getHandle(), button, org.lwjgl.glfw.GLFW.GLFW_PRESS , 0);
+                    mouseButtonCallbackMethod.invoke(mc.mouseHelper, mc.mainWindow.getHandle(), button, org.lwjgl.glfw.GLFW.GLFW_PRESS , 0);
                 } catch (Exception e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
