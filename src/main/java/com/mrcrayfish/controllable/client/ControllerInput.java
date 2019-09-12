@@ -77,6 +77,7 @@ public class ControllerInput
     private int dropCounter = -1;
     
     private static Method mouseButtonCallbackMethod = ObfuscationReflectionHelper.findMethod(net.minecraft.client.MouseHelper.class, "func_198023_a", long.class, int.class, int.class, int.class);
+    private static Field rightClickDelayTimer = ObfuscationReflectionHelper.findField(net.minecraft.client.Minecraft.class, "field_71467_ac");
 
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event)
@@ -324,15 +325,18 @@ public class ControllerInput
                 }
             }
         }
-
-        if(controller.isButtonPressed(Buttons.LEFT_TRIGGER) && !mc.player.isHandActive()) //TODO need to reimplement delay timer, it has been privatized
-        {
-            try {
-                mouseButtonCallbackMethod.invoke(mc.mouseHelper, mc.mainWindow.getHandle(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_2, org.lwjgl.glfw.GLFW.GLFW_PRESS , 0);
-            } catch (Exception e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+        try {
+            if(controller.isButtonPressed(Buttons.LEFT_TRIGGER) && !mc.player.isHandActive() && rightClickDelayTimer.getInt(mc) == 0) //TODO need to reimplement delay timer, it has been privatized
+            {
+                try {
+                    mouseButtonCallbackMethod.invoke(mc.mouseHelper, mc.mainWindow.getHandle(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_2, org.lwjgl.glfw.GLFW.GLFW_PRESS , 0);
+                } catch (Exception e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         
         controller.pushOldStates();
